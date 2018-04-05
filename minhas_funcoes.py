@@ -1,7 +1,124 @@
+from __future__ import division, absolute_import
+#from future.builtins import range
 import numpy as np
-import matplotlib.pyplot as plt
 import warnings
 from matplotlib import pyplot, widgets
+import matplotlib.pyplot as plt
+
+##################################################################################################################################
+def draw_polygon(area, axes, style='-', marker='o', color='k', width=2,
+                 alpha=0.5, xy2ne=False):
+    """
+    Draw a polygon by clicking with the mouse.
+    INSTRUCTIONS:
+    * Left click to pick the edges of the polygon;
+    * Draw edges CLOCKWISE;
+    * Press 'e' to erase the last edge;
+    * Right click to close the polygon;
+    * Close the figure window to finish;
+    Parameters:
+    * area : list = [x1, x2, y1, y2]
+        Borders of the area containing the polygon
+    * axes : matplotlib Axes
+        The figure to use for drawing the polygon.
+        To get an Axes instace, just do::
+            from matplotlib import pyplot
+            axes = pyplot.figure().add_subplot(1,1,1)
+        You can plot things to ``axes`` before calling this function so that
+        they'll appear on the background.
+    * style : str
+        Line style (as in matplotlib.pyplot.plot)
+    * marker : str
+        Style of the point markers (as in matplotlib.pyplot.plot)
+    * color : str
+        Line color (as in matplotlib.pyplot.plot)
+    * width : float
+        The line width (as in matplotlib.pyplot.plot)
+    * alpha : float
+        Transparency of the fill of the polygon. 0 for transparent, 1 for
+        opaque (fills the polygon once done drawing)
+    * xy2ne : True or False
+        If True, will exchange the x and y axis so that x points north.
+        Use this when drawing on a map viewed from above. If the y-axis of the
+        plot is supposed to be z (depth), then use ``xy2ne=False``.
+    Returns:
+    * edges : list of lists
+        List of ``[x, y]`` pairs with the edges of the polygon
+    """
+    axes.set_title("Click to draw polygon. Right click when done.")
+    if xy2ne:
+        axes.set_xlim(area[2], area[3])
+        axes.set_ylim(area[0], area[1])
+    else:
+        axes.set_xlim(area[0], area[1])
+        axes.set_ylim(area[2], area[3])
+    # start with an empty line
+    line, = axes.plot([], [], marker=marker, linestyle=style, color=color,
+                      linewidth=width)
+    tmpline, = axes.plot([], [], marker=marker, linestyle=style, color=color,
+                         linewidth=width)
+    draw = axes.figure.canvas.draw
+    x = []
+    y = []
+    plotx = []
+    ploty = []
+    # Hack because Python 2 doesn't like nonlocal variables that change value.
+    # Lists it doesn't mind.
+    picking = [True]
+
+    def draw_guide(px, py):
+        if len(x) != 0:
+            tmpline.set_data([x[-1], px], [y[-1], py])
+
+    def move(event):
+        if event.inaxes != axes:
+            return 0
+        if picking[0]:
+            draw_guide(event.xdata, event.ydata)
+            draw()
+
+    def pick(event):
+        if event.inaxes != axes:
+            return 0
+        if event.button == 1 and picking[0]:
+            x.append(event.xdata)
+            y.append(event.ydata)
+            plotx.append(event.xdata)
+            ploty.append(event.ydata)
+        if event.button == 3 or event.button == 2 and picking[0]:
+            if len(x) < 3:
+                axes.set_title("Need at least 3 points to make a polygon")
+            else:
+                picking[0] = False
+                axes.set_title("Done! You can close the window now.")
+                plotx.append(x[0])
+                ploty.append(y[0])
+                tmpline.set_data([], [])
+                axes.fill(plotx, ploty, color=color, alpha=alpha)
+        line.set_data(plotx, ploty)
+        draw()
+
+    def erase(event):
+        if event.key == 'e' and picking[0]:
+            x.pop()
+            y.pop()
+            plotx.pop()
+            ploty.pop()
+            line.set_data(plotx, ploty)
+            draw_guide(event.xdata, event.ydata)
+            draw()
+    line.figure.canvas.mpl_connect('button_press_event', pick)
+    line.figure.canvas.mpl_connect('key_press_event', erase)
+    line.figure.canvas.mpl_connect('motion_notify_event', move)
+    pyplot.show()
+    if len(x) < 3:
+        raise ValueError("Need at least 3 points to make a polygon")
+    if xy2ne:
+        verts = numpy.transpose([y, x])
+    else:
+        verts = numpy.transpose([x, y])
+    return verts
+##################################################################################################################################
 
 def WGS84():
     '''
@@ -276,60 +393,49 @@ def plota_mapa(projecao, x, y, dado, area, unidade, titulo, cores, tamanho,
                             longitude_central, latitude_central,
                             length=comprimento_escala, barstyle='fancy')    
     plt.show()
-##################################################################################################################################
 
-def draw_polygon(area, axes, style='-', marker='o', color='k', width=2,
-                 alpha=0.5, xy2ne=False):
+##################################################################################################################################
+def pick_points(area, axes, marker='o', color='k', size=8, xy2ne=False):
     """
-    Draw a polygon by clicking with the mouse.
+    Get the coordinates of points by clicking with the mouse.
     INSTRUCTIONS:
-    * Left click to pick the edges of the polygon;
-    * Draw edges CLOCKWISE;
-    * Press 'e' to erase the last edge;
-    * Right click to close the polygon;
+    * Left click to pick the points;
+    * Press 'e' to erase the last point picked;
     * Close the figure window to finish;
     Parameters:
     * area : list = [x1, x2, y1, y2]
-        Borders of the area containing the polygon
+        Borders of the area containing the points
     * axes : matplotlib Axes
         The figure to use for drawing the polygon.
         To get an Axes instace, just do::
             from matplotlib import pyplot
-            axes = pyplot.figure().add_subplot(1,1,1)
+            axes = plt.figure().add_subplot(1,1,1)
         You can plot things to ``axes`` before calling this function so that
         they'll appear on the background.
-    * style : str
-        Line style (as in matplotlib.pyplot.plot)
     * marker : str
-        Style of the point markers (as in matplotlib.pyplot.plot)
+        Style of the point markers (as in matplotlib.plt.plot)
     * color : str
-        Line color (as in matplotlib.pyplot.plot)
-    * width : float
-        The line width (as in matplotlib.pyplot.plot)
-    * alpha : float
-        Transparency of the fill of the polygon. 0 for transparent, 1 for
-        opaque (fills the polygon once done drawing)
+        Line color (as in matplotlib.plt.plot)
+    * size : float
+        Marker size (as in matplotlib.plt.plot)
     * xy2ne : True or False
         If True, will exchange the x and y axis so that x points north.
         Use this when drawing on a map viewed from above. If the y-axis of the
         plot is supposed to be z (depth), then use ``xy2ne=False``.
     Returns:
-    * edges : list of lists
-        List of ``[x, y]`` pairs with the edges of the polygon
+    * points : list of lists
+        List of ``[x, y]`` coordinates of the points
     """
-    axes.set_title("Click to draw polygon. Right click when done.")
+    axes.set_title("Click to pick points. Close window when done.")
     if xy2ne:
         axes.set_xlim(area[2], area[3])
         axes.set_ylim(area[0], area[1])
     else:
         axes.set_xlim(area[0], area[1])
         axes.set_ylim(area[2], area[3])
-    # start with an empty line
-    line, = axes.plot([], [], marker=marker, linestyle=style, color=color,
-                      linewidth=width)
-    tmpline, = axes.plot([], [], marker=marker, linestyle=style, color=color,
-                         linewidth=width)
-    draw = axes.figure.canvas.draw
+    # start with an empty set
+    line, = axes.plot([], [], marker=marker, color=color, markersize=size)
+    line.figure.canvas.draw
     x = []
     y = []
     plotx = []
@@ -337,17 +443,6 @@ def draw_polygon(area, axes, style='-', marker='o', color='k', width=2,
     # Hack because Python 2 doesn't like nonlocal variables that change value.
     # Lists it doesn't mind.
     picking = [True]
-
-    def draw_guide(px, py):
-        if len(x) != 0:
-            tmpline.set_data([x[-1], px], [y[-1], py])
-
-    def move(event):
-        if event.inaxes != axes:
-            return 0
-        if picking[0]:
-            draw_guide(event.xdata, event.ydata)
-            draw()
 
     def pick(event):
         if event.inaxes != axes:
@@ -357,18 +452,12 @@ def draw_polygon(area, axes, style='-', marker='o', color='k', width=2,
             y.append(event.ydata)
             plotx.append(event.xdata)
             ploty.append(event.ydata)
-        if event.button == 3 or event.button == 2 and picking[0]:
-            if len(x) < 3:
-                axes.set_title("Need at least 3 points to make a polygon")
-            else:
-                picking[0] = False
-                axes.set_title("Done! You can close the window now.")
-                plotx.append(x[0])
-                ploty.append(y[0])
-                tmpline.set_data([], [])
-                axes.fill(plotx, ploty, color=color, alpha=alpha)
-        line.set_data(plotx, ploty)
-        draw()
+            line.set_color(color)
+            line.set_marker(marker)
+            line.set_markersize(size)
+            line.set_linestyle('')
+            line.set_data(plotx, ploty)
+            line.figure.canvas.draw
 
     def erase(event):
         if event.key == 'e' and picking[0]:
@@ -377,17 +466,94 @@ def draw_polygon(area, axes, style='-', marker='o', color='k', width=2,
             plotx.pop()
             ploty.pop()
             line.set_data(plotx, ploty)
-            draw_guide(event.xdata, event.ydata)
-            draw()
+            line.figure.canvas.draw
     line.figure.canvas.mpl_connect('button_press_event', pick)
     line.figure.canvas.mpl_connect('key_press_event', erase)
-    line.figure.canvas.mpl_connect('motion_notify_event', move)
-    pyplot.show()
-    if len(x) < 3:
-        raise ValueError("Need at least 3 points to make a polygon")
+    plt.show()
     if xy2ne:
-        verts = numpy.transpose([y, x])
+        points = np.transpose([y, x])
     else:
-        verts = numpy.transpose([x, y])
-    return verts
+        points = np.transpose([x, y])
+    return points
 
+##################################################################################################################################
+##################################################################################################################################
+##################################################################################################################################
+
+def grav2D_anom(xv,zv,rho,beta):
+# COMPUTES THE 2D GRAVITY ANOMALY IN mGals OF A TWO DIMENSIONAL(2D) BODY OF ARBITRARY SHAPE WITH HYPERBOLIC
+#! DENBITY CONTRAST
+#! This code is based on Rao et al 1994 implementation
+#! xv,zv = vertices of the arbitrary source (kilometers) 
+#! rho = density contrast in g/cm3
+#! beta = coeficient to control the hyperbolic decay with depth 
+#! n = number of vertices of the arbitrary source (in clockwise direction)
+# output: grav (1D array with gravity anomaly produced by the polygon)
+    
+    # Check inconstancy of array dimensions:
+    # Stablishing some conditions
+    if xv.shape != zv.shape:
+        raise ValueError("All inputs must have same shape!")
+    # get the number of elements of xv (number of vertices of the polygon)
+    n = np.size(xv)
+        
+    # create new working arrays for the vertices of a closed polygon:
+    x = np.zeros( (n+1,) )  
+    z = np.zeros( (n+1,) ) 
+    x[0:n] = xv
+    z[0:n] = zv
+    # Closed body: 
+    x[n:n+1] = xv[0]
+    z[n:n+1] = zv[0]
+    gval = 0.0    #! gravity value to be added
+    #! Loop over the vertices of the 2D polygon:
+    for k in range(n):
+        rk = np.sqrt(x[k]**2 + z[k]**2)
+        if rk == 0.0: 
+            raise ValueError("Identical vertices. Check coordinates")
+            break
+        rk1 = np.sqrt( x[k+1]**2 + z[k+1]**2 )
+        if rk1 == 0.0: 
+            raise ValueError("Identical vertices. Check coordinates")
+            break
+        #! vertices differences:
+        dx  = x[k+1] - x[k]
+        dz  = z[k+1] - z[k]
+        den = np.sqrt(dx*dx + dz*dz)
+        if den == 0.0: 
+            raise ValueError("Identical vertices. Check coordinates")
+            break
+  
+    # compute the hyperbolic density function (Litinsky, 1994):
+        c  = dx/den
+        s  = dz/den
+        p1 = x[k] * s - z[k] * c
+        p2 = beta**2 - 2.0 * beta * p1 * c + p1**2
+        q1 = beta + z[k]
+        q2 = beta + z[k+1]
+        if z[k] == 0.0:
+            ph1 = 1.570796 * ( x[k] / np.absolute( x[k] ) )
+        else:
+            ph1 = np.arctan2(x[k], z[k] ) 
+
+        if z[k+1] == 0.0:
+            ph2 = 1.570796 * ( x[k+1] / np.absolute( x[k+1] ) )
+        else:
+            ph2 = np.arctan2( x[k+1], z[k+1] )
+        
+       #! Compute the gravity effect:
+        d1 = rk1 * q1
+        d2 = rk  * q2
+        a1 = np.log(d1 / d2)
+        t1 = (a1 * s) / p2
+        t2 = (beta - p1 * c) / (p1 * p2)
+        t3 = ph1 - ph2
+        t4 = t2 * t3
+        dg = p1 * (t1 - t4) 
+   
+        gval += dg
+    
+    cte = 13.33333 * rho * beta**2
+    #!grav2D_anom = gval * cte     ! gravity anomaly in mGal
+    grav = gval * cte
+    return grav
