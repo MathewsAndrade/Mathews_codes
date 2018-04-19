@@ -1,9 +1,14 @@
-from __future__ import division, absolute_import
-#from future.builtins import range
-import numpy as np
 import warnings
+import numpy
 from matplotlib import pyplot, widgets
-import matplotlib.pyplot as plt
+
+# Quick hack so that the docs can build using the mocks for readthedocs
+# Ideal would be to log an error message saying that functions from pyplot
+# were not imported
+try:
+    from matplotlib.pyplot import *
+except:
+    pass
 
 ##################################################################################################################################
 def draw_polygon(area, axes, style='-', marker='o', color='k', width=2,
@@ -362,11 +367,11 @@ def plota_mapa(projecao, x, y, dado, area, unidade, titulo, cores, tamanho,
     y_min = np.min(y)
     y_max = np.max(y)
     
-    plt.figure(figsize=tamanho)
-    plt.title(titulo, fontsize=18, y=1.05)
-    projecao.contourf(x, y, dado, 100, tri=True, cmap=plt.get_cmap(cores),
+    pyplot.figure(figsize=tamanho)
+    pyplot.title(titulo, fontsize=18, y=1.05)
+    projecao.contourf(x, y, dado, 100, tri=True, cmap=pyplot.get_cmap(cores),
                       vmin = -ranges + ranges_0, vmax = ranges + ranges_0)
-    plt.colorbar(orientation='horizontal', pad=0.04, aspect=50, 
+    pyplot.colorbar(orientation='horizontal', pad=0.04, aspect=50, 
                  shrink=0.7).set_label(unidade, fontsize=18)
     projecao.drawcoastlines()
     if (np.ceil(area[2]) == area[2]):
@@ -392,7 +397,7 @@ def plota_mapa(projecao, x, y, dado, area, unidade, titulo, cores, tamanho,
         projecao.drawmapscale(longitude_escala, latitude_escala,
                             longitude_central, latitude_central,
                             length=comprimento_escala, barstyle='fancy')    
-    plt.show()
+    pyplot.show()
 
 ##################################################################################################################################
 def pick_points(area, axes, marker='o', color='k', size=8, xy2ne=False):
@@ -409,15 +414,15 @@ def pick_points(area, axes, marker='o', color='k', size=8, xy2ne=False):
         The figure to use for drawing the polygon.
         To get an Axes instace, just do::
             from matplotlib import pyplot
-            axes = plt.figure().add_subplot(1,1,1)
+            axes = pyplot.figure().add_subplot(1,1,1)
         You can plot things to ``axes`` before calling this function so that
         they'll appear on the background.
     * marker : str
-        Style of the point markers (as in matplotlib.plt.plot)
+        Style of the point markers (as in matplotlib.pyplot.plot)
     * color : str
-        Line color (as in matplotlib.plt.plot)
+        Line color (as in matplotlib.pyplot.plot)
     * size : float
-        Marker size (as in matplotlib.plt.plot)
+        Marker size (as in matplotlib.pyplot.plot)
     * xy2ne : True or False
         If True, will exchange the x and y axis so that x points north.
         Use this when drawing on a map viewed from above. If the y-axis of the
@@ -469,7 +474,7 @@ def pick_points(area, axes, marker='o', color='k', size=8, xy2ne=False):
             line.figure.canvas.draw
     line.figure.canvas.mpl_connect('button_press_event', pick)
     line.figure.canvas.mpl_connect('key_press_event', erase)
-    plt.show()
+    pyplot.show()
     if xy2ne:
         points = np.transpose([y, x])
     else:
