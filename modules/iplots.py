@@ -42,7 +42,7 @@ def pick_points(area, axes, marker='o', color='k', size=8, xy2ne=False):
     """
     #fig = pyplot.figure()
     #ax = fig.add_subplot(1,1,1)
-    axes.set_title('Click to pick points')
+    axes.set_title('Click to pick points (ALWAYS CLOCKWISE!!!). Close fig when done.')
     if xy2ne:
         axes.set_xlim(area[2], area[3])
         axes.set_ylim(area[0], area[1])
@@ -57,6 +57,7 @@ def pick_points(area, axes, marker='o', color='k', size=8, xy2ne=False):
     y = []
     plotx = []
     ploty = []
+    pyplot.gca().invert_yaxis()
     axes.figure.canvas.draw()
     # Hack because Python 2 doesn't like nonlocal variables that change value.
     # Lists it doesn't mind.
