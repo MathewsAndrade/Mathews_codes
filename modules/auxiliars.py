@@ -50,22 +50,22 @@ def inv_power_dist(x,y,data,xi,yi,power):
 # dati = dado interpolado   
      
     # verificando qual o menor dos vetores de entrada: 
-   n1 = np.size(x)  # dimension of real data
-   n2 = np.size(xi) # dimension of interpolated data
+    n1 = np.size(x)  # dimension of real data
+    n2 = np.size(xi) # dimension of interpolated data
     # criacao de arrays:
-   peso = np.zeros(n2)
-   dati = np.zeros(n2)
-   dist = np.zeros( (n2,n1) )
-   dummy = 1e-15
-   for i in range(n2):
-      dist[i,:] = np.sqrt( (x[:] - xi[i] )**2 + ( y[:] - yi[i] )**2 ) # calculo das distancias 
-      for j in range(n1):
-         if dist[i,j] == 0.:
-            dist[i,j] = dummy
+    peso = np.zeros(n2)
+    dati = np.zeros(n2)
+    dist = np.zeros( (n2,n1) )
+    dummy = 1e-15
+    for i in range(n2):
+        dist[i,:] = np.sqrt( (x[:] - xi[i] )**2 + ( y[:] - yi[i] )**2 ) # calculo das distancias 
+        for j in range(n1):
+            if dist[i,j] == 0.:
+                dist[i,j] = dummy
     
-      peso[i] = np.sum(1.0 / dist[i,:]**power)
-      dati[i] = np.sum(data/dist[i,:]**power)
-      dati[i] = dati[i]/peso[i]
+        peso[i] = np.sum(1.0 / dist[i,:]**power)
+        dati[i] = np.sum(data/dist[i,:]**power)
+        dati[i] = dati[i]/peso[i]
         
-   return dati
+    return dati
 ##################################################################################################################################
