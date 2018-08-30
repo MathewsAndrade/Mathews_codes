@@ -49,7 +49,8 @@ def pick_points(area, axes, marker='o', color='k', size=8, xy2ne=False):
     else:
         axes.set_xlim(area[0], area[1])
         axes.set_ylim(area[2], area[3])
-   
+    
+    axes.grid()
     line, = axes.plot([],[])
     tmpline, = axes.plot([], [])
     line.figure.canvas.draw()
